@@ -120,6 +120,12 @@ public:
             }
         }
     }
+    void SetPos(Vector2 pos){
+        this->pos = pos;
+    }
+    void SetVel(Vector2 vel){
+        this->velocity = vel;
+    }
 };
 
 class Tank{
@@ -149,8 +155,11 @@ class KeySet{
 public:
     int p1_horizontal = 0;
     int p1_vertical = 0;
+    int p1_fire_cooldown = 10;
+
     int p2_horizontal = 0;
     int p2_vertical = 0;
+    int p2_fire_cooldown = 10;
 };
 
 void Update(Projectile allBody[], PlaneX PlanesX[], PlaneY PlanesY[], Tank *tank1, Tank *tank2, int bodies, sf::RenderWindow *window){
@@ -163,10 +172,51 @@ void Update(Projectile allBody[], PlaneX PlanesX[], PlaneY PlanesY[], Tank *tank
     window->display();
 }
 
-void FixedUpdate(Projectile allBody[], PlaneX allPlanesX[], int planesX, PlaneY allPlanesY[], int planesY, int bodies, Tank *tank1, Tank *tank2, KeySet *keys){
+void FixedUpdate(Projectile AllProjectiles[], PlaneX allPlanesX[], int planesX, PlaneY allPlanesY[], int planesY, int bodies, Tank *tank1, Tank *tank2, KeySet *keys){
 
     while (true){
         sleep_for(5ms);
+
+        if (keys->p1_fire_cooldown == -1){
+            if (AllProjectiles[0].available){
+                AllProjectiles[0].SetPos(Vector2(tank1->tank.getPosition().x, tank1->tank.getPosition().y));
+                AllProjectiles[0].SetVel(Vector2(cos(tank1->tank.getRotation()*0.0174532777778), sin(tank1->tank.getRotation()*0.0174532777778)));
+                AllProjectiles[0].available = false;
+            }else if (AllProjectiles[1].available){
+                AllProjectiles[1].SetPos(Vector2(tank1->tank.getPosition().x, tank1->tank.getPosition().y));
+                AllProjectiles[1].SetVel(Vector2(cos(tank1->tank.getRotation()*0.0174532777778), sin(tank1->tank.getRotation()*0.0174532777778)));
+                AllProjectiles[1].available = false;
+            }else if (AllProjectiles[2].available){
+                AllProjectiles[2].SetPos(Vector2(tank1->tank.getPosition().x, tank1->tank.getPosition().y));
+                AllProjectiles[2].SetVel(Vector2(cos(tank1->tank.getRotation()*0.0174532777778), sin(tank1->tank.getRotation()*0.0174532777778)));
+                AllProjectiles[2].available = false;
+            }
+            keys->p1_fire_cooldown = 10;
+        }
+        if (keys->p2_fire_cooldown == -1){
+            if (AllProjectiles[3].available){
+                AllProjectiles[3].SetPos(Vector2(tank2->tank.getPosition().x, tank2->tank.getPosition().y));
+                AllProjectiles[3].SetVel(Vector2(cos(tank2->tank.getRotation()*0.0174532777778), sin(tank2->tank.getRotation()*0.0174532777778)));
+                AllProjectiles[3].available = false;
+            }else if (AllProjectiles[4].available){
+                AllProjectiles[4].SetPos(Vector2(tank2->tank.getPosition().x, tank2->tank.getPosition().y));
+                AllProjectiles[4].SetVel(Vector2(cos(tank2->tank.getRotation()*0.0174532777778), sin(tank2->tank.getRotation()*0.0174532777778)));
+                AllProjectiles[4].available = false;
+            }else if (AllProjectiles[5].available){
+                AllProjectiles[5].SetPos(Vector2(tank2->tank.getPosition().x, tank2->tank.getPosition().y));
+                AllProjectiles[5].SetVel(Vector2(cos(tank2->tank.getRotation()*0.0174532777778), sin(tank2->tank.getRotation()*0.0174532777778)));
+                AllProjectiles[5].available = false;
+            }
+        }
+
+
+        if (keys->p1_fire_cooldown != 0){
+            keys->p1_fire_cooldown -= 1;
+        }
+        if (keys->p2_fire_cooldown != 0){
+            keys->p2_fire_cooldown -= 1;
+        }
+
         tank1->Forward(keys->p1_vertical);
         tank2->Forward(keys->p2_vertical);
 
@@ -182,11 +232,11 @@ void FixedUpdate(Projectile allBody[], PlaneX allPlanesX[], int planesX, PlaneY 
         }
 
         for (int b = 0; b < bodies; b++){
-            allBody[b].CheckBounceX(allPlanesX, planesX);
-            allBody[b].CheckBounceY(allPlanesY, planesY);
+            AllProjectiles[b].CheckBounceX(allPlanesX, planesX);
+            AllProjectiles[b].CheckBounceY(allPlanesY, planesY);
         }
         for (int b = 0; b < bodies; b++){
-            (allBody[b]).UpdatePosition();
+            (AllProjectiles[b]).UpdatePosition();
         }
     }
 }
@@ -197,14 +247,14 @@ int main() {
     KeySet keys;
 
     // Bodies
-    const int bodies = 6;
-    Projectile allBodies[bodies] = {
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 0, sf::Color(0, 0, 0)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 0, sf::Color(0, 0, 0)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 0, sf::Color(0, 0, 0)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 0, sf::Color(0, 0, 0)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 0, sf::Color(0, 0, 0)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 0, sf::Color(0, 0, 0)),
+    const int projectiles = 6;
+    Projectile allProjectiles[projectiles] = {
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
     };
     int planesX = 2;
     PlaneX allPlanesX[2] = {
@@ -226,7 +276,7 @@ int main() {
 
     sf::Event event{};
 
-    std::thread thread(FixedUpdate, allBodies, allPlanesX, planesX, allPlanesY, planesY, bodies, &tank1, &tank2, &keys);
+    std::thread thread(FixedUpdate, allProjectiles, allPlanesX, planesX, allPlanesY, planesY, projectiles, &tank1, &tank2, &keys);
 
     while (window.isOpen()){
         while (window.pollEvent((event))) {
@@ -235,7 +285,6 @@ int main() {
                 exit(0);
             }
 
-
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
                 keys.p1_vertical = 1;
             }else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)){
@@ -243,6 +292,7 @@ int main() {
             }else{
                 keys.p1_vertical = 0;
             }
+
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)){
                 keys.p1_horizontal = -1;
             }else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)){
@@ -250,6 +300,14 @@ int main() {
             }else{
                 keys.p1_horizontal = 0;
             }
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)){
+                if (keys.p1_fire_cooldown == 0){
+                    keys.p1_fire_cooldown = -1;
+                }
+            }
+
+
 
 
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)){
@@ -259,6 +317,7 @@ int main() {
             }else{
                 keys.p2_vertical = 0;
             }
+
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)){
                 keys.p2_horizontal = -1;
             }else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)){
@@ -266,9 +325,17 @@ int main() {
             }else{
                 keys.p2_horizontal = 0;
             }
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)){
+                if (keys.p2_fire_cooldown == 0){
+                    keys.p2_fire_cooldown = -1;
+                }
+            }
+
+
         }
         window.clear();
-        Update(allBodies, allPlanesX, allPlanesY, &tank1, &tank2, bodies, &window);
+        Update(allProjectiles, allPlanesX, allPlanesY, &tank1, &tank2, projectiles, &window);
     }
 
 
