@@ -3,7 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include <thread>
 #include <chrono>
-#include <cmath>
+#include <iostream>
 
 #define G 6.673889e-11
 #define rezx 1920
@@ -63,6 +63,7 @@ class Projectile{
 private:
     sf::CircleShape body;
 public:
+    bool available = true;
     float mass = 1;
     int radius;
     Vector2 velocity = Vector2(0,0);
@@ -126,44 +127,60 @@ public:
     sf::RectangleShape tank;
 
     Tank(Vector2 pos, int rotation){
+        this->tank.setOrigin(10, 10);
         this->tank.setRotation(rotation);
         this->tank.setPosition(pos.x, pos.y);
 
         this->tank.setFillColor(sf::Color(255, 255, 255));
-        this->tank.setScale(20, 20);
+        this->tank.setSize(sf::Vector2f(20,20));
     }
 
     void Forward(int multiplier=1){
-        this->tank.move(sin(this->tank.getRotation()*0.0174532777778)*multiplier,
-                        cos(this->tank.getRotation()*0.0174532777778)*multiplier);
+        this->tank.setPosition(cos(this->tank.getRotation()*0.0174532777778)*multiplier+this->tank.getPosition().x,
+                        sin(this->tank.getRotation()*0.0174532777778)*multiplier+this->tank.getPosition().y);
+    }
+
+    void Rotate(float rotation){
+        this->tank.rotate(rotation);
     }
 };
 
 class KeySet{
 public:
-    bool p1_up = false;
-    bool p1_down = false;
-    bool p2_up = false;
-    bool p2_down = false;
+    int p1_horizontal = 0;
+    int p1_vertical = 0;
+    int p2_horizontal = 0;
+    int p2_vertical = 0;
 };
 
-void Update(Projectile allBody[], PlaneX PlanesX[], PlaneY PlanesY[], Tank tanks[], int bodies, sf::RenderWindow *window){
+void Update(Projectile allBody[], PlaneX PlanesX[], PlaneY PlanesY[], Tank *tank1, Tank *tank2, int bodies, sf::RenderWindow *window){
     for (int b = 0; b < bodies; b++){
-        (*window).draw((allBody[b]).Render());
+        window->draw((allBody[b]).Render());
     }
-    (*window).draw(tanks[0].tank);
-    (*window).draw(tanks[1].tank);
+    window->draw(tank1->tank);
+    window->draw(tank2->tank);
 
-    (*window).display();
+    window->display();
 }
 
-void FixedUpdate(Projectile allBody[], PlaneX allPlanesX[], PlaneY allPlanesY[], int bodies, KeySet *keys){
-    int planesX = allPlanesX->length;
-    int planesY = allPlanesY->length;
-
+void FixedUpdate(Projectile allBody[], PlaneX allPlanesX[], int planesX, PlaneY allPlanesY[], int planesY, int bodies, Tank *tank1, Tank *tank2, KeySet *keys){
 
     while (true){
         sleep_for(5ms);
+        tank1->Forward(keys->p1_vertical);
+        tank2->Forward(keys->p2_vertical);
+
+        if (keys->p1_vertical != 0){
+            tank1->Rotate(keys->p1_horizontal);
+        }else{
+            tank1->Rotate(keys->p1_horizontal*0.5);
+        }
+        if (keys->p2_vertical != 0) {
+            tank2->Rotate(keys->p2_horizontal);
+        }else{
+            tank2->Rotate(keys->p2_horizontal*0.5);
+        }
+
         for (int b = 0; b < bodies; b++){
             allBody[b].CheckBounceX(allPlanesX, planesX);
             allBody[b].CheckBounceY(allPlanesY, planesY);
@@ -174,21 +191,20 @@ void FixedUpdate(Projectile allBody[], PlaneX allPlanesX[], PlaneY allPlanesY[],
     }
 }
 
-
 int main() {
-    sf::RenderWindow window(sf::VideoMode(rezx, rezy), "Gravity");
+    sf::RenderWindow window(sf::VideoMode(rezx, rezy), "TanksAlot");
 
     KeySet keys;
 
     // Bodies
     const int bodies = 6;
     Projectile allBodies[bodies] = {
-            Projectile(0, Vector2(0, 0), Vector2(0, 0), 0, sf::Color(0, 0, 0)),
-            Projectile(0, Vector2(0, 0), Vector2(0, 0), 0, sf::Color(0, 0, 0)),
-            Projectile(0, Vector2(0, 0), Vector2(0, 0), 0, sf::Color(0, 0, 0)),
-            Projectile(0, Vector2(0, 0), Vector2(0, 0), 0, sf::Color(0, 0, 0)),
-            Projectile(0, Vector2(0, 0), Vector2(0, 0), 0, sf::Color(0, 0, 0)),
-            Projectile(0, Vector2(0, 0), Vector2(0, 0), 0, sf::Color(0, 0, 0)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 0, sf::Color(0, 0, 0)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 0, sf::Color(0, 0, 0)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 0, sf::Color(0, 0, 0)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 0, sf::Color(0, 0, 0)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 0, sf::Color(0, 0, 0)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 0, sf::Color(0, 0, 0)),
     };
     int planesX = 2;
     PlaneX allPlanesX[2] = {
@@ -203,14 +219,14 @@ int main() {
             //(*paddle2).paddle
     };
 
-    Tank tanks[2] = {
-            Tank(Vector2(400, 400), 0),
-            Tank(Vector2(400, 500), 0)
-    };
+
+    Tank tank1 = Tank(Vector2(400, 400), 0);
+    Tank tank2 = Tank(Vector2(400, 500), 0);
+
 
     sf::Event event{};
 
-    std::thread thread(FixedUpdate, allBodies, allPlanesX, allPlanesY, bodies, &keys);
+    std::thread thread(FixedUpdate, allBodies, allPlanesX, planesX, allPlanesY, planesY, bodies, &tank1, &tank2, &keys);
 
     while (window.isOpen()){
         while (window.pollEvent((event))) {
@@ -218,30 +234,41 @@ int main() {
                 window.close();
                 exit(0);
             }
+
+
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
-                keys.p1_up = true;
-                keys.p1_down = false;
+                keys.p1_vertical = 1;
             }else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)){
-                keys.p1_up = false;
-                keys.p1_down = true;
+                keys.p1_vertical = -1;
             }else{
-                keys.p1_up = false;
-                keys.p1_down = false;
+                keys.p1_vertical = 0;
+            }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)){
+                keys.p1_horizontal = -1;
+            }else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)){
+                keys.p1_horizontal = 1;
+            }else{
+                keys.p1_horizontal = 0;
             }
 
+
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)){
-                keys.p2_up = true;
-                keys.p2_down = false;
+                keys.p2_vertical = 1;
             }else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)){
-                keys.p2_up = false;
-                keys.p2_down = true;
+                keys.p2_vertical = -1;
             }else{
-                keys.p2_up = false;
-                keys.p2_down = false;
+                keys.p2_vertical = 0;
+            }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)){
+                keys.p2_horizontal = -1;
+            }else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)){
+                keys.p2_horizontal = 1;
+            }else{
+                keys.p2_horizontal = 0;
             }
         }
         window.clear();
-        Update(allBodies, allPlanesX, allPlanesY, tanks, bodies, &window);
+        Update(allBodies, allPlanesX, allPlanesY, &tank1, &tank2, bodies, &window);
     }
 
 
