@@ -15,7 +15,6 @@ using namespace std::this_thread;     // sleep_for, sleep_until
 using namespace std::chrono_literals; // ns, us, ms, s, h, etc.
 using std::chrono::system_clock;
 
-
 class Vector2{
 public:
     double x = 0;
@@ -133,12 +132,12 @@ public:
     sf::RectangleShape tank;
 
     Tank(Vector2 pos, int rotation){
-        this->tank.setOrigin(10, 10);
+        this->tank.setOrigin(25, 25);
         this->tank.setRotation(rotation);
         this->tank.setPosition(pos.x, pos.y);
 
         this->tank.setFillColor(sf::Color(255, 255, 255));
-        this->tank.setSize(sf::Vector2f(20,20));
+        this->tank.setSize(sf::Vector2f(50,50));
     }
 
     void Forward(int multiplier=1){
@@ -162,6 +161,12 @@ public:
     int p2_fire_cooldown = 10;
 };
 
+void fire_projectile(Projectile *projectile, Vector2 Pos, Vector2 Vel){
+    projectile->SetPos(Pos);
+    projectile->SetVel(Vel);
+    projectile->available = false;
+}
+
 void Update(Projectile allBody[], PlaneX PlanesX[], PlaneY PlanesY[], Tank *tank1, Tank *tank2, int bodies, sf::RenderWindow *window){
     for (int b = 0; b < bodies; b++){
         window->draw((allBody[b]).Render());
@@ -174,46 +179,38 @@ void Update(Projectile allBody[], PlaneX PlanesX[], PlaneY PlanesY[], Tank *tank
 
 void FixedUpdate(Projectile AllProjectiles[], PlaneX allPlanesX[], int planesX, PlaneY allPlanesY[], int planesY, int bodies, Tank *tank1, Tank *tank2, KeySet *keys){
 
+    int projectileLen = 16;
     while (true){
         sleep_for(5ms);
 
         if (keys->p1_fire_cooldown == -1){
-            if (AllProjectiles[0].available){
-                AllProjectiles[0].SetPos(Vector2(tank1->tank.getPosition().x, tank1->tank.getPosition().y));
-                AllProjectiles[0].SetVel(Vector2(cos(tank1->tank.getRotation()*0.0174532777778), sin(tank1->tank.getRotation()*0.0174532777778)));
-                AllProjectiles[0].available = false;
-            }else if (AllProjectiles[1].available){
-                AllProjectiles[1].SetPos(Vector2(tank1->tank.getPosition().x, tank1->tank.getPosition().y));
-                AllProjectiles[1].SetVel(Vector2(cos(tank1->tank.getRotation()*0.0174532777778), sin(tank1->tank.getRotation()*0.0174532777778)));
-                AllProjectiles[1].available = false;
-            }else if (AllProjectiles[2].available){
-                AllProjectiles[2].SetPos(Vector2(tank1->tank.getPosition().x, tank1->tank.getPosition().y));
-                AllProjectiles[2].SetVel(Vector2(cos(tank1->tank.getRotation()*0.0174532777778), sin(tank1->tank.getRotation()*0.0174532777778)));
-                AllProjectiles[2].available = false;
+            for (int i = 0; i <= projectileLen; i+= 2){
+                if (AllProjectiles[i].available){
+                    fire_projectile(&AllProjectiles[i],
+                                    Vector2(tank1->tank.getPosition().x, tank1->tank.getPosition().y),
+                                    Vector2(cos(tank1->tank.getRotation()*0.0174532777778), sin(tank1->tank.getRotation()*0.0174532777778)));
+                    keys->p1_fire_cooldown = 30;
+                    break;
+                }
             }
-            keys->p1_fire_cooldown = 10;
         }
         if (keys->p2_fire_cooldown == -1){
-            if (AllProjectiles[3].available){
-                AllProjectiles[3].SetPos(Vector2(tank2->tank.getPosition().x, tank2->tank.getPosition().y));
-                AllProjectiles[3].SetVel(Vector2(cos(tank2->tank.getRotation()*0.0174532777778), sin(tank2->tank.getRotation()*0.0174532777778)));
-                AllProjectiles[3].available = false;
-            }else if (AllProjectiles[4].available){
-                AllProjectiles[4].SetPos(Vector2(tank2->tank.getPosition().x, tank2->tank.getPosition().y));
-                AllProjectiles[4].SetVel(Vector2(cos(tank2->tank.getRotation()*0.0174532777778), sin(tank2->tank.getRotation()*0.0174532777778)));
-                AllProjectiles[4].available = false;
-            }else if (AllProjectiles[5].available){
-                AllProjectiles[5].SetPos(Vector2(tank2->tank.getPosition().x, tank2->tank.getPosition().y));
-                AllProjectiles[5].SetVel(Vector2(cos(tank2->tank.getRotation()*0.0174532777778), sin(tank2->tank.getRotation()*0.0174532777778)));
-                AllProjectiles[5].available = false;
+            for (int i = 1; i <= projectileLen; i+= 2){
+                if (AllProjectiles[i].available){
+                    fire_projectile(&AllProjectiles[i],
+                                    Vector2(tank2->tank.getPosition().x, tank2->tank.getPosition().y),
+                                    Vector2(cos(tank2->tank.getRotation()*0.0174532777778), sin(tank2->tank.getRotation()*0.0174532777778)));
+                    keys->p2_fire_cooldown = 30;
+                    break;
+                }
             }
         }
 
 
-        if (keys->p1_fire_cooldown != 0){
+        if (keys->p1_fire_cooldown > 0){
             keys->p1_fire_cooldown -= 1;
         }
-        if (keys->p2_fire_cooldown != 0){
+        if (keys->p2_fire_cooldown > 0){
             keys->p2_fire_cooldown -= 1;
         }
 
@@ -247,8 +244,18 @@ int main() {
     KeySet keys;
 
     // Bodies
-    const int projectiles = 6;
+    const int projectiles = 16;
     Projectile allProjectiles[projectiles] = {
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
             Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
             Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
             Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
