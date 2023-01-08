@@ -6,9 +6,9 @@
 #include <iostream>
 
 #define G 6.673889e-11
-#define rezx 1920
-#define rezy 1080
-
+#define rezx 1000
+#define rezy 1000
+#define projSpeed 3
 
 using namespace std;
 using namespace std::this_thread;     // sleep_for, sleep_until
@@ -42,19 +42,25 @@ public:
 class PlaneX{
 public:
     Vector2 point = Vector2(0, 0);
+    sf::Vertex line[2];
     int length = 0;
     PlaneX(Vector2 point, int length){
         this->point = point;
         this->length = length;
+        this->line[0] = sf::Vertex(sf::Vector2f(this->point.x, this->point.y));
+        this->line[1] = sf::Vertex(sf::Vector2f(this->point.x+this->length, this->point.y));
     }
 };
 class PlaneY{
 public:
     Vector2 point = Vector2(0, 0);
+    sf::Vertex line[2];
     int length = 0;
     PlaneY(Vector2 point, int length){
         this->point = point;
         this->length = length;
+        this->line[0] = sf::Vertex(sf::Vector2f(this->point.x, this->point.y));
+        this->line[1] = sf::Vertex(sf::Vector2f(this->point.x, this->point.y+this->length));
     }
 };
 
@@ -63,6 +69,7 @@ private:
     sf::CircleShape body;
 public:
     bool available = true;
+    int lifespan = 5;
     float mass = 1;
     int radius;
     Vector2 velocity = Vector2(0,0);
@@ -70,13 +77,13 @@ public:
 
     Projectile(float mass, Vector2 velocity, Vector2 pos, int radius, sf::Color color){
         this->mass = mass;
+        this->body.setPosition(pos.x, pos.y);
         this->pos = pos;
         this->velocity = velocity;
         this->body.setRadius(radius);
         this->body.setFillColor(color);
         this->radius = radius;
         this->body.setOrigin(radius, radius);
-        this->body.setPosition(pos.x, pos.y);
     }
 
 /*    void UpdateVelocity (Projectile allBody[], int bodies){   // Not really useful for a top-down shooter, is it?
@@ -106,6 +113,7 @@ public:
             if (abs(allPlanes[p].point.y - pos.y) < radius){
                 if (pos.x > allPlanes[p].point.x && pos.x < allPlanes[p].point.x+allPlanes[p].length){
                     velocity.y = -velocity.y;
+                    this->lifespan --;
                 }
             }
         }
@@ -115,6 +123,7 @@ public:
             if (abs(allPlanes[p].point.x - pos.x) < radius){
                 if (pos.y > allPlanes[p].point.y && pos.y < allPlanes[p].point.y+allPlanes[p].length){
                     velocity.x = -velocity.x;
+                    this->lifespan --;
                 }
             }
         }
@@ -167,12 +176,22 @@ void fire_projectile(Projectile *projectile, Vector2 Pos, Vector2 Vel){
     projectile->available = false;
 }
 
-void Update(Projectile allBody[], PlaneX PlanesX[], PlaneY PlanesY[], Tank *tank1, Tank *tank2, int bodies, sf::RenderWindow *window){
+void Update(Projectile allBody[], PlaneX PlanesX[], int numX, PlaneY PlanesY[], int numY, Tank *tank1, Tank *tank2, int bodies, sf::RenderWindow *window){
     for (int b = 0; b < bodies; b++){
         window->draw((allBody[b]).Render());
     }
+
+    for (int p = 0; p < numX; p++){
+        window->draw(PlanesX[p].line, 2, sf::Lines);
+    }
+    for (int p = 0; p < numY; p++){
+        window->draw(PlanesY[p].line, 2, sf::Lines);
+    }
+
+
     window->draw(tank1->tank);
     window->draw(tank2->tank);
+
 
     window->display();
 }
@@ -188,7 +207,7 @@ void FixedUpdate(Projectile AllProjectiles[], PlaneX allPlanesX[], int planesX, 
                 if (AllProjectiles[i].available){
                     fire_projectile(&AllProjectiles[i],
                                     Vector2(tank1->tank.getPosition().x, tank1->tank.getPosition().y),
-                                    Vector2(cos(tank1->tank.getRotation()*0.0174532777778), sin(tank1->tank.getRotation()*0.0174532777778)));
+                                    Vector2(cos(tank1->tank.getRotation()*0.0174532777778)*projSpeed, sin(tank1->tank.getRotation()*0.0174532777778)*projSpeed));
                     keys->p1_fire_cooldown = 30;
                     break;
                 }
@@ -199,10 +218,16 @@ void FixedUpdate(Projectile AllProjectiles[], PlaneX allPlanesX[], int planesX, 
                 if (AllProjectiles[i].available){
                     fire_projectile(&AllProjectiles[i],
                                     Vector2(tank2->tank.getPosition().x, tank2->tank.getPosition().y),
-                                    Vector2(cos(tank2->tank.getRotation()*0.0174532777778), sin(tank2->tank.getRotation()*0.0174532777778)));
+                                    Vector2(cos(tank2->tank.getRotation()*0.0174532777778)*projSpeed, sin(tank2->tank.getRotation()*0.0174532777778)*projSpeed));
                     keys->p2_fire_cooldown = 30;
                     break;
                 }
+            }
+        }
+
+        for (int i = 0; i < projectileLen; i++){
+            if (AllProjectiles[i].lifespan == 0){
+                AllProjectiles[i] = Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110));
             }
         }
 
@@ -235,6 +260,8 @@ void FixedUpdate(Projectile AllProjectiles[], PlaneX allPlanesX[], int planesX, 
         for (int b = 0; b < bodies; b++){
             (AllProjectiles[b]).UpdatePosition();
         }
+        cout << tank1->tank.getPosition().x << " " << tank1->tank.getPosition().y << "\n";
+//        cout << tank2->tank.getPosition().x << " " << tank2->tank.getPosition().y << "\n";
     }
 }
 
@@ -263,22 +290,23 @@ int main() {
             Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
             Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
     };
-    int planesX = 2;
-    PlaneX allPlanesX[2] = {
+
+    const int planesX = 2;
+    PlaneX allPlanesX[planesX] = {
             PlaneX(Vector2(0, 0), rezx),
-            PlaneX(Vector2(0, 500), rezx)
+            PlaneX(Vector2(0, rezy), rezx)
     };
-    int planesY = 2;
-    PlaneY allPlanesY[2] = {
-            PlaneY(Vector2(24.5, 0), rezy),
-            PlaneY(Vector2(975.5, 0), rezy),
+    const int planesY = 2;
+    PlaneY allPlanesY[planesY] = {
+            PlaneY(Vector2(0, 0), rezy),
+            PlaneY(Vector2(rezx, 0), rezy),
             //(*paddle1).paddle,
             //(*paddle2).paddle
     };
 
 
-    Tank tank1 = Tank(Vector2(400, 400), 0);
-    Tank tank2 = Tank(Vector2(400, 500), 0);
+    Tank tank1 = Tank(Vector2(100, 100), 0);
+    Tank tank2 = Tank(Vector2(50, 50), 45);
 
 
     sf::Event event{};
@@ -342,7 +370,7 @@ int main() {
 
         }
         window.clear();
-        Update(allProjectiles, allPlanesX, allPlanesY, &tank1, &tank2, projectiles, &window);
+        Update(allProjectiles, allPlanesX, planesX, allPlanesY, planesY, &tank1, &tank2, projectiles, &window);
     }
 
 
