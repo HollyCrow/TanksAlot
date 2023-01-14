@@ -159,10 +159,10 @@ public:
         float x = cos(this->tank.getRotation()*0.0174532777778)*multiplier;
         float y = sin(this->tank.getRotation()*0.0174532777778)*multiplier;
 //        cout << x << " " << y << "\n";
-        if (this->CheckBounceY(allPlanesY, planesY) == -1) { y = abs(y); cout << "YN\n"; }
-        if (this->CheckBounceY(allPlanesY, planesY) == 1) { y = -abs(y); cout << "YP\n"; }
-        if (this->CheckBounceX(allPlanesX, planesX) == -1) { x = abs(x); cout << "XN\n"; }
-        if (this->CheckBounceX(allPlanesX, planesX) == 1) { x = -abs(x); cout << "XP\n"; }
+        if (this->CheckBounceY(allPlanesY, planesY) == -1) { x = abs(x); cout << "YN\n"; }
+        if (this->CheckBounceY(allPlanesY, planesY) == 1) { x = -abs(x); cout << "YP\n"; }
+        if (this->CheckBounceX(allPlanesX, planesX) == -1) { y = abs(y); cout << "XN\n"; }
+        if (this->CheckBounceX(allPlanesX, planesX) == 1) { y = -abs(y); cout << "XP\n"; }
 //        cout << x+this->tank.getPosition().x << " " << y+this->tank.getPosition().y << "\n";
         this->tank.setPosition(x+this->tank.getPosition().x,y+this->tank.getPosition().y);
         this->turret.setPosition(this->tank.getPosition());
@@ -180,12 +180,14 @@ public:
 
     int CheckBounceX(PlaneX allPlanes[], int planes){
 //        cout << this->tank.getPosition().x << " " << this->tank.getPosition().y << "\n";
-        cout << planes << "\n";
-        for (int p = 0; p <= planes; p++) {
-            cout << allPlanes[p].point.y << p << "--\n";
-            if (this->tank.getPosition().y > allPlanes[p].point.y && this->tank.getPosition().y < allPlanes[p].point.y + allPlanes[p].length) {
-                if (abs(allPlanes[p].point.x - this->tank.getPosition().x) < radius) {
-                    if (allPlanes[p].point.x < this->tank.getPosition().x) {
+//        cout << planes << "\n";
+        for (int p = 0; p < planes; p++) {
+            cout << allPlanes[p].point.x << " " << allPlanes[p].point.y << "\n";
+//            cout << allPlanes[p].point.y << p << "--\n";
+            if (this->tank.getPosition().x > allPlanes[p].point.x && this->tank.getPosition().x < allPlanes[p].point.x + allPlanes[p].length) {
+                if (abs(allPlanes[p].point.y - this->tank.getPosition().y) < radius) {
+//                    cout << "Success " << p << "\n";
+                    if (allPlanes[p].point.y < this->tank.getPosition().y) {
                         return -1;
                     } else {
                         return 1;
@@ -197,11 +199,11 @@ public:
         return 0;
     }
     int CheckBounceY(PlaneY allPlanes[], int planes){
-        for (int p = 0; p <= planes; p++) {
+        for (int p = 0; p < planes; p++) {
 //            cout << allPlanes[p].point.y << "--\n";
-            if (this->tank.getPosition().x > allPlanes[p].point.x && this->tank.getPosition().x < allPlanes[p].point.x + allPlanes[p].length) {
-                if (abs(allPlanes[p].point.y - this->tank.getPosition().y) < radius) {
-                    if (allPlanes[p].point.y < this->tank.getPosition().y) {
+            if (this->tank.getPosition().y > allPlanes[p].point.y && this->tank.getPosition().y < allPlanes[p].point.y + allPlanes[p].length) {
+                if (abs(allPlanes[p].point.x - this->tank.getPosition().x) < radius) {
+                    if (allPlanes[p].point.x < this->tank.getPosition().x) {
                         return -1;
                     } else {
                         return 1;
@@ -366,13 +368,13 @@ int main() {
 
     const int planesX = 2;
     PlaneX allPlanesX[planesX] = {
-            PlaneX(Vector2(0, 0), 500),
-            PlaneX(Vector2(0, 500), 500)
+            PlaneX(Vector2(0, 0), rezx),
+            PlaneX(Vector2(0, rezy), rezx)
     };
     const int planesY = 2;
     PlaneY allPlanesY[planesY] = {
-            PlaneY(Vector2(0, 0), 500),
-            PlaneY(Vector2(500, 0), 500),
+            PlaneY(Vector2(0, 0), rezy),
+            PlaneY(Vector2(rezx, 0), rezy),
             //(*paddle1).paddle,
             //(*paddle2).paddle
     };
