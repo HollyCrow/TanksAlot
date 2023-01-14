@@ -39,28 +39,33 @@ public:
 
 };
 
-class PlaneX{
+class Plane{
 public:
     Vector2 point = Vector2(0, 0);
+    bool low = false;
     sf::Vertex line[2];
     int length = 0;
-    PlaneX(Vector2 point, int length){
+};
+
+class PlaneX: public Plane{
+public:
+    PlaneX(Vector2 point, int length, bool isLow=false){
         this->point = point;
         this->length = length;
-        this->line[0] = sf::Vertex(sf::Vector2f(this->point.x, this->point.y));
-        this->line[1] = sf::Vertex(sf::Vector2f(this->point.x+this->length, this->point.y));
+        this->line[0] = sf::Vertex(sf::Vector2f(this->point.x, this->point.y), (isLow)? sf::Color(100,100,100) : sf::Color(255,255,255));
+        this->line[1] = sf::Vertex(sf::Vector2f(this->point.x+this->length, this->point.y), (isLow)? sf::Color(100,100,100) : sf::Color(255,255,255));
+        this->low = isLow;
+
     }
 };
-class PlaneY{
+class PlaneY: public Plane{
 public:
-    Vector2 point = Vector2(0, 0);
-    sf::Vertex line[2];
-    int length = 0;
-    PlaneY(Vector2 point, int length){
+    PlaneY(Vector2 point, int length, bool isLow=false){
         this->point = point;
         this->length = length;
-        this->line[0] = sf::Vertex(sf::Vector2f(this->point.x, this->point.y));
-        this->line[1] = sf::Vertex(sf::Vector2f(this->point.x, this->point.y+this->length));
+        this->line[0] = sf::Vertex(sf::Vector2f(this->point.x, this->point.y), (isLow)? sf::Color(100,100,100) : sf::Color(255,255,255));
+        this->line[1] = sf::Vertex(sf::Vector2f(this->point.x, this->point.y+this->length), (isLow)? sf::Color(100,100,100) : sf::Color(255,255,255));
+        this->low = isLow;
     }
 };
 
@@ -69,6 +74,7 @@ private:
     sf::CircleShape body;
 public:
     bool available = true;
+    int age = 0;
     int lifespan = 5;
     float mass = 1;
     int radius;
@@ -110,7 +116,7 @@ public:
 
     void CheckBounceX(PlaneX allPlanes[], int planes){
         for (int p = 0; p < planes; p++){
-            if (abs(allPlanes[p].point.y - pos.y) < radius){
+            if (abs(allPlanes[p].point.y - pos.y) < radius && !allPlanes[p].low){
                 if (pos.x > allPlanes[p].point.x && pos.x < allPlanes[p].point.x+allPlanes[p].length){
                     velocity.y = -velocity.y;
                     this->lifespan --;
@@ -120,7 +126,7 @@ public:
     }
     void CheckBounceY(PlaneY allPlanes[], int planes){
         for (int p = 0; p < planes; p++){
-            if (abs(allPlanes[p].point.x - pos.x) < radius){
+            if (abs(allPlanes[p].point.x - pos.x) < radius && !allPlanes[p].low){
                 if (pos.y > allPlanes[p].point.y && pos.y < allPlanes[p].point.y+allPlanes[p].length){
                     velocity.x = -velocity.x;
                     this->lifespan --;
@@ -138,31 +144,41 @@ public:
 
 class Tank{
 public:
-    sf::RectangleShape tank;
-    sf::RectangleShape turret;
+
+
+    sf::Sprite tank;
+    sf::Sprite turret;
     int radius = 25;
 
-    Tank(Vector2 pos, int rotation){
+    Tank(Vector2 pos, int rotation, sf::Texture& base, sf::Texture& turret){
+
+        this->tank = sf::Sprite(base);
         this->tank.setOrigin(25, 25);
-        this->turret.setOrigin(5, 5);
-        this->tank.setRotation(rotation);
+        this->tank.setRotation(rotation+90);
         this->tank.setPosition(pos.x, pos.y);
 
-        this->tank.setFillColor(sf::Color(255, 255, 255));
-        this->tank.setSize(sf::Vector2f(50,50));
 
-        this->turret.setFillColor(sf::Color(50, 155, 75));
-        this->turret.setSize(sf::Vector2f(50,10));
+        this->turret = sf::Sprite(turret);
+        this->turret.setOrigin(25, 25);
+        this->turret.setRotation(rotation+90);
+        this->turret.setPosition(pos.x, pos.y);
+
+
+//        this->tank.setFillColor(sf::Color(255, 255, 255));
+//        this->tank.setSize(sf::Vector2f(50,50));
+
+//        this->turret.setFillColor(sf::Color(50, 155, 75));
+//        this->turret.setSize(sf::Vector2f(50,10));
     }
 
     void Forward(PlaneX allPlanesX[], int planesX, PlaneY allPlanesY[], int planesY, int multiplier=1){
         float x = cos(this->tank.getRotation()*0.0174532777778)*multiplier;
         float y = sin(this->tank.getRotation()*0.0174532777778)*multiplier;
 //        cout << x << " " << y << "\n";
-        if (this->CheckBounceY(allPlanesY, planesY) == -1) { x = abs(x); cout << "YN\n"; }
-        if (this->CheckBounceY(allPlanesY, planesY) == 1) { x = -abs(x); cout << "YP\n"; }
-        if (this->CheckBounceX(allPlanesX, planesX) == -1) { y = abs(y); cout << "XN\n"; }
-        if (this->CheckBounceX(allPlanesX, planesX) == 1) { y = -abs(y); cout << "XP\n"; }
+        if (this->CheckBounceY(allPlanesY, planesY) == -1) { x = abs(x); y = y*0.3; }
+        if (this->CheckBounceY(allPlanesY, planesY) == 1) { x = -abs(x); y = y*0.3; }
+        if (this->CheckBounceX(allPlanesX, planesX) == -1) { y = abs(y); x = x*0.3; }
+        if (this->CheckBounceX(allPlanesX, planesX) == 1) { y = -abs(y); x = x*0.3; }
 //        cout << x+this->tank.getPosition().x << " " << y+this->tank.getPosition().y << "\n";
         this->tank.setPosition(x+this->tank.getPosition().x,y+this->tank.getPosition().y);
         this->turret.setPosition(this->tank.getPosition());
@@ -182,7 +198,6 @@ public:
 //        cout << this->tank.getPosition().x << " " << this->tank.getPosition().y << "\n";
 //        cout << planes << "\n";
         for (int p = 0; p < planes; p++) {
-            cout << allPlanes[p].point.x << " " << allPlanes[p].point.y << "\n";
 //            cout << allPlanes[p].point.y << p << "--\n";
             if (this->tank.getPosition().x > allPlanes[p].point.x && this->tank.getPosition().x < allPlanes[p].point.x + allPlanes[p].length) {
                 if (abs(allPlanes[p].point.y - this->tank.getPosition().y) < radius) {
@@ -233,6 +248,7 @@ public:
 void fire_projectile(Projectile *projectile, Vector2 Pos, Vector2 Vel){
     projectile->SetPos(Pos);
     projectile->SetVel(Vel);
+    projectile->age = 0;
     projectile->available = false;
 }
 
@@ -274,7 +290,7 @@ void FixedUpdate(Projectile AllProjectiles[], PlaneX allPlanesX[], int planesX, 
             for (int i = 0; i <= projectileLen; i+= 2){
                 if (AllProjectiles[i].available){
                     fire_projectile(&AllProjectiles[i], //TODO fire from cannon, not tank direction
-                                    Vector2(tank1->turret.getPosition().x+cos(tank1->turret.getRotation()*0.0174532777778)*40, tank1->turret.getPosition().y+sin(tank1->turret.getRotation()*0.0174532777778)*40),
+                                    Vector2(tank1->turret.getPosition().x, tank1->turret.getPosition().y),
                                     Vector2(cos(tank1->turret.getRotation()*0.0174532777778)*projSpeed, sin(tank1->turret.getRotation()*0.0174532777778)*projSpeed));
                     break;
                 }
@@ -285,7 +301,7 @@ void FixedUpdate(Projectile AllProjectiles[], PlaneX allPlanesX[], int planesX, 
             for (int i = 1; i <= projectileLen; i+= 2){
                 if (AllProjectiles[i].available){
                     fire_projectile(&AllProjectiles[i],
-                                    Vector2(tank2->turret.getPosition().x+cos(tank2->turret.getRotation()*0.0174532777778)*40, tank2->turret.getPosition().y+sin(tank2->turret.getRotation()*0.0174532777778)*40),
+                                    Vector2(tank2->turret.getPosition().x, tank2->turret.getPosition().y),
                                     Vector2(cos(tank2->turret.getRotation()*0.0174532777778)*projSpeed, sin(tank2->turret.getRotation()*0.0174532777778)*projSpeed));
                     break;
                 }
@@ -319,17 +335,20 @@ void FixedUpdate(Projectile AllProjectiles[], PlaneX allPlanesX[], int planesX, 
         }
 
         for (int b = 0; b < bodies; b++){
+            AllProjectiles[b].age += 1;
             AllProjectiles[b].CheckBounceX(allPlanesX, planesX);
             AllProjectiles[b].CheckBounceY(allPlanesY, planesY);
-            if (tank1->checkDeath(AllProjectiles[b].pos)){
-                tank1->tank.setFillColor(sf::Color(200,0,0));
-                cout << "Player 1 Death\n";
-                AllProjectiles[b] = Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110));
-            }
-            if (tank2->checkDeath(AllProjectiles[b].pos)){
-                cout << "Player 2 Death\n";
-                tank2->tank.setFillColor(sf::Color(200,0,0));
-                AllProjectiles[b] = Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110));
+            if (AllProjectiles[b].age >= 15) {
+                if (tank1->checkDeath(AllProjectiles[b].pos)) {
+//                    tank1->tank.setFillColor(sf::Color(200, 0, 0));
+                    cout << "Player 1 Death\n";
+                    AllProjectiles[b] = Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110));
+                }
+                if (tank2->checkDeath(AllProjectiles[b].pos)) {
+                    cout << "Player 2 Death\n";
+//                    tank2->tank.setFillColor(sf::Color(200, 0, 0));
+                    AllProjectiles[b] = Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110));
+                }
             }
         }
         for (int b = 0; b < bodies; b++){
@@ -341,54 +360,97 @@ void FixedUpdate(Projectile AllProjectiles[], PlaneX allPlanesX[], int planesX, 
 }
 
 int main() {
+
+    //Load textures
+
+    sf::Texture greyTankBase;
+    if(!greyTankBase.loadFromFile("./Assets/GreyBase.png")){
+        cout << "Errpr loading greyTankBase.png\n";
+        return 0;
+    }else{
+        cout << "Loaded greyTankBase.png\n";
+    }
+    sf::Texture greyTankTurret;
+    if(!greyTankTurret.loadFromFile("./Assets/GreyTurret.png")){
+        cout << "Errpr loading greyTankBase.png\n";
+        return 0;
+    }else{
+        cout << "Loaded greyTankBase.png\n";
+    }
+
+
+
+    // Player 1 and 2 Tanks
+    Tank tank1 = Tank(Vector2(100, 100), 0, greyTankBase, greyTankTurret);
+    Tank tank2 = Tank(Vector2(100, 100), 45, greyTankBase, greyTankTurret);
+
+    tank1.tank.setColor(sf::Color(255, 50, 50));
+    tank2.tank.setColor(sf::Color(50, 50, 255));
+    tank1.turret.setColor(sf::Color(255, 100, 100));
+    tank2.turret.setColor(sf::Color(100, 100, 255));
+
+//    tank1.tank.setTexture(greyTankBase);
+//    tank2.tank.setTexture(greyTankBase);
+
+
+
+
+    // Create Window
     sf::RenderWindow window(sf::VideoMode(rezx, rezy), "TanksAlot");
 
+    // Keypress pointers object
     KeySet keys;
 
-    // Bodies
+    // Projectiles (Max 8 per player)
     const int projectiles = 16;
     Projectile allProjectiles[projectiles] = {
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
-            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110)),
-    }; // Gooffy constructor
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 5, sf::Color(255, 255, 255)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 5, sf::Color(255, 255, 255)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 5, sf::Color(255, 255, 255)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 5, sf::Color(255, 255, 255)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 5, sf::Color(255, 255, 255)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 5, sf::Color(255, 255, 255)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 5, sf::Color(255, 255, 255)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 5, sf::Color(255, 255, 255)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 5, sf::Color(255, 255, 255)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 5, sf::Color(255, 255, 255)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 5, sf::Color(255, 255, 255)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 5, sf::Color(255, 255, 255)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 5, sf::Color(255, 255, 255)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 5, sf::Color(255, 255, 255)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 5, sf::Color(255, 255, 255)),
+            Projectile(0, Vector2(0, 0), Vector2(-100, -100), 5, sf::Color(255, 255, 255)),
+    }; // Goofy constructor
 
-    const int planesX = 2;
+    // Colliders in the X axis
+    const int planesX = 4;
     PlaneX allPlanesX[planesX] = {
             PlaneX(Vector2(0, 0), rezx),
-            PlaneX(Vector2(0, rezy), rezx)
+            PlaneX(Vector2(0, rezy), rezx),
+            PlaneX(Vector2(300, rezy/2), 130, true),
+            PlaneX(Vector2(600, rezy/2), 130),
     };
-    const int planesY = 2;
+    // Colliders in the Y axis
+    const int planesY = 3;
     PlaneY allPlanesY[planesY] = {
             PlaneY(Vector2(0, 0), rezy),
             PlaneY(Vector2(rezx, 0), rezy),
+            PlaneY(Vector2(600, rezy/2), 130)
             //(*paddle1).paddle,
             //(*paddle2).paddle
     };
 
 
-    Tank tank1 = Tank(Vector2(100, 100), 0);
-    Tank tank2 = Tank(Vector2(100, 100), 45);
-
-
+    // Keycapture event
     sf::Event event{};
 
+    // Start physics thread
     std::thread thread(FixedUpdate, allProjectiles, allPlanesX, planesX, allPlanesY, planesY, projectiles, &tank1, &tank2, &keys);
 
+    // Graphics thread
     while (window.isOpen()){
+
+        // Key capture
         while (window.pollEvent((event))) {
             if (event.type == sf::Event::Closed || sf::Keyboard::isKeyPressed(sf::Keyboard::T)) {
                 window.close();
@@ -459,6 +521,8 @@ int main() {
 
 
         }
+
+        // Render GameObjects
         window.clear();
         Update(allProjectiles, allPlanesX, planesX, allPlanesY, planesY, &tank1, &tank2, projectiles, &window);
     }
