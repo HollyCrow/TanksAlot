@@ -245,6 +245,25 @@ public:
     float p2_canon_aim = 0;
 };
 
+class Barrier{
+public:
+    PlaneX planesX1 = PlaneX(Vector2(0, 0), 0);
+    PlaneX planesX2 = PlaneX(Vector2(0, 0), 0);
+    PlaneY planesY1 = PlaneY(Vector2(0, 0), 0);
+    PlaneY planesY2 = PlaneY(Vector2(0, 0), 0);
+    sf::RectangleShape view;
+
+    Barrier(Vector2 topLeft, Vector2 bottomRight) {
+        planesX1.point = topLeft;
+        planesX2.point = Vector2(topLeft.x, bottomRight.y);
+        planesY1.point = topLeft;
+        planesY2.point = Vector2(bottomRight.x, topLeft.y);
+        view.setScale(bottomRight.x-topLeft.x, bottomRight.y-topLeft.y);
+        view.setPosition(sf::Vector2f(topLeft.x, topLeft.y));
+        view.setFillColor(sf::Color(200, 240, 100));
+    }
+};
+
 void fire_projectile(Projectile *projectile, Vector2 Pos, Vector2 Vel){
     projectile->SetPos(Pos);
     projectile->SetVel(Vel);
