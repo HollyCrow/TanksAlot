@@ -239,6 +239,10 @@ public:
         this->turret.setPosition(this->tank.getPosition());
     }
 
+    void setPosition(Vector2 pos){
+        this->tank.setPosition(pos.x, pos.y);
+        this->turret.setPosition(pos.x, pos.y);
+    }
 
     void Rotate(float rotation){
         this->tank.rotate(rotation);
@@ -462,7 +466,6 @@ void Update(Projectile allProjectiles[], PlaneX PlanesX[], int numX, PlaneY Plan
     }
 
 
-    window->display();
 }
 
 void FixedUpdate(Projectile AllProjectiles[], int bodies, PlaneX allPlanesX[], int planesX, PlaneY allPlanesY[], int planesY, Barrier allBarriers[], int barriers, Tank *tank1, Tank *tank2, KeySet *keys){
@@ -566,6 +569,16 @@ int main() {
     }else{
         cout << "Loaded greyTankBase.png\n";
     }
+    sf::Texture *titleScreenImage;
+    if(!titleScreenImage->loadFromFile("./Assets/TitleScreen.png")){
+        cout << "Errpr loading titleScreen.png\n";
+        return 0;
+    }else{
+        cout << "Loaded titleScreen.png\n";
+    }
+
+
+
 
     // Player 1 and 2 Tanks
     Tank tank1 = Tank(Vector2(100, 100), 0, greyTankBase, greyTankTurret);
@@ -577,6 +590,11 @@ int main() {
     tank1.turret.setColor(sf::Color(255, 100, 100));
     tank2.turret.setColor(sf::Color(100, 100, 255));
 
+
+    // Title screen
+    sf::RectangleShape titleScreen = sf::RectangleShape();
+
+    titleScreen.setTexture(titleScreenImage);
 
 
     // Create Window
@@ -638,6 +656,8 @@ int main() {
             Barrier(Vector2(1088, 478), Vector2(1300, 509), false),
     };
 
+
+    bool inTitleScreen = true;
 
 
     // Keycapture event
@@ -719,6 +739,13 @@ int main() {
             }
 
 
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::X) || sf::Keyboard::isKeyPressed(sf::Keyboard::M)){
+                inTitleScreen = true;
+                tank1.setPosition(Vector2(0, 0));
+                tank2.setPosition(Vector2(0, 0));
+            }
+
+
         }
 
         // Render GameObjects
@@ -726,6 +753,12 @@ int main() {
         window.draw(allBarriers[0].view);
 
         Update(allProjectiles, allPlanesX, planesX, allPlanesY, planesY, &tank1, &tank2, projectiles, allBarriers, barriers, &window);
+        if (inTitleScreen){
+            window.draw(titleScreen);
+        }
+
+        window.display();
+
     }
 
 
