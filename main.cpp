@@ -1,4 +1,5 @@
 //g++ -o tanks main.cpp -lsfml-graphics -lsfml-window -lsfml-system && ./tanks
+// If this breaks: 1. make sure sfml is installed, 2. Give up.
 #include <cmath>
 #include <SFML/Graphics.hpp>
 #include <thread>
