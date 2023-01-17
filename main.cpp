@@ -466,89 +466,103 @@ void Update(Projectile allProjectiles[], PlaneX PlanesX[], int numX, PlaneY Plan
     }
 
 
+
+
 }
 
-void FixedUpdate(Projectile AllProjectiles[], int bodies, PlaneX allPlanesX[], int planesX, PlaneY allPlanesY[], int planesY, Barrier allBarriers[], int barriers, Tank *tank1, Tank *tank2, KeySet *keys){
+void FixedUpdate(Projectile AllProjectiles[], int bodies, PlaneX allPlanesX[], int planesX, PlaneY allPlanesY[], int planesY, Barrier allBarriers[], int barriers, Tank *tank1, Tank *tank2, KeySet *keys, bool *isTitleScreen, sf::Sprite *titleScreen, sf::Texture blueWin, sf::Texture redWin){
     int projectileLen = 16;
     while (true){
-        sleep_for(5ms);
+        if(!*isTitleScreen){
+            sleep_for(5ms);
 
-        if (keys->p1_fire_cool_down > 0){
-            keys->p1_fire_cool_down -= 1;
-        }
-        if (keys->p2_fire_cool_down > 0){
-            keys->p2_fire_cool_down -= 1;
-        }
-        if (keys->p1_fire_cool_down == -1){
-            for (int i = 0; i <= projectileLen; i+= 2){
-                if (AllProjectiles[i].available){
-                    fire_projectile(&AllProjectiles[i], //TODO fire from cannon, not tank direction
-                                    Vector2(tank1->turret.getPosition().x, tank1->turret.getPosition().y),
-                                    Vector2(cos(tank1->turret.getRotation()*0.0174532777778)*projSpeed, sin(tank1->turret.getRotation()*0.0174532777778)*projSpeed));
-                    break;
+            if (keys->p1_fire_cool_down > 0) {
+                keys->p1_fire_cool_down -= 1;
+            }
+            if (keys->p2_fire_cool_down > 0) {
+                keys->p2_fire_cool_down -= 1;
+            }
+            if (keys->p1_fire_cool_down == -1) {
+                for (int i = 0; i <= projectileLen; i += 2) {
+                    if (AllProjectiles[i].available) {
+                        fire_projectile(&AllProjectiles[i], //TODO fire from cannon, not tank direction
+                                        Vector2(tank1->turret.getPosition().x, tank1->turret.getPosition().y),
+                                        Vector2(cos(tank1->turret.getRotation() * 0.0174532777778) * projSpeed,
+                                                sin(tank1->turret.getRotation() * 0.0174532777778) * projSpeed));
+                        break;
+                    }
+                }
+                keys->p1_fire_cool_down = 30;
+            }
+            if (keys->p2_fire_cool_down == -1) {
+                for (int i = 1; i <= projectileLen; i += 2) {
+                    if (AllProjectiles[i].available) {
+                        fire_projectile(&AllProjectiles[i],
+                                        Vector2(tank2->turret.getPosition().x, tank2->turret.getPosition().y),
+                                        Vector2(cos(tank2->turret.getRotation() * 0.0174532777778) * projSpeed,
+                                                sin(tank2->turret.getRotation() * 0.0174532777778) * projSpeed));
+                        break;
+                    }
+                }
+                keys->p2_fire_cool_down = 30;
+            }
+
+
+            for (int i = 0; i < projectileLen; i++) {
+                if (AllProjectiles[i].lifespan == 0) {
+                    AllProjectiles[i] = Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110));
                 }
             }
-            keys->p1_fire_cool_down = 30;
-        }
-        if (keys->p2_fire_cool_down == -1){
-            for (int i = 1; i <= projectileLen; i+= 2){
-                if (AllProjectiles[i].available){
-                    fire_projectile(&AllProjectiles[i],
-                                    Vector2(tank2->turret.getPosition().x, tank2->turret.getPosition().y),
-                                    Vector2(cos(tank2->turret.getRotation()*0.0174532777778)*projSpeed, sin(tank2->turret.getRotation()*0.0174532777778)*projSpeed));
-                    break;
-                }
+
+
+            tank1->Forward(allPlanesX, planesX, allPlanesY, planesY, keys->p1_vertical, allBarriers, barriers);
+            tank2->Forward(allPlanesX, planesX, allPlanesY, planesY, keys->p2_vertical, allBarriers, barriers);
+            tank1->turret.rotate(keys->p1_canon_aim);
+            tank2->turret.rotate(keys->p2_canon_aim);
+
+
+            if (keys->p1_vertical != 0) {
+                tank1->Rotate(keys->p1_horizontal);
+            } else {
+                tank1->Rotate(keys->p1_horizontal * 0.5);
             }
-            keys->p2_fire_cool_down = 30;
-        }
-
-
-        for (int i = 0; i < projectileLen; i++){
-            if (AllProjectiles[i].lifespan == 0){
-                AllProjectiles[i] = Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110));
+            if (keys->p2_vertical != 0) {
+                tank2->Rotate(keys->p2_horizontal);
+            } else {
+                tank2->Rotate(keys->p2_horizontal * 0.5);
             }
-        }
 
-
-        tank1->Forward(allPlanesX, planesX, allPlanesY, planesY, keys->p1_vertical, allBarriers, barriers);
-        tank2->Forward(allPlanesX, planesX, allPlanesY, planesY, keys->p2_vertical, allBarriers, barriers);
-        tank1->turret.rotate(keys->p1_canon_aim);
-        tank2->turret.rotate(keys->p2_canon_aim);
-
-
-        if (keys->p1_vertical != 0){
-            tank1->Rotate(keys->p1_horizontal);
-        }else{
-            tank1->Rotate(keys->p1_horizontal*0.5);
-        }
-        if (keys->p2_vertical != 0) {
-            tank2->Rotate(keys->p2_horizontal);
-        }else{
-            tank2->Rotate(keys->p2_horizontal*0.5);
-        }
-
-        for (int b = 0; b < bodies; b++){
-            AllProjectiles[b].age += 1;
-            AllProjectiles[b].CheckBounceX(allPlanesX, planesX, allBarriers, barriers);
-            AllProjectiles[b].CheckBounceY(allPlanesY, planesY, allBarriers, barriers);
-            if (AllProjectiles[b].age >= 15) {
-                if (tank1->checkDeath(AllProjectiles[b].pos)) {
+            for (int b = 0; b < bodies; b++) {
+                AllProjectiles[b].age += 1;
+                AllProjectiles[b].CheckBounceX(allPlanesX, planesX, allBarriers, barriers);
+                AllProjectiles[b].CheckBounceY(allPlanesY, planesY, allBarriers, barriers);
+                if (AllProjectiles[b].age >= 15) {
+                    if (tank1->checkDeath(AllProjectiles[b].pos)) {
 //                    tank1->tank.setFillColor(sf::Color(200, 0, 0));
-                    cout << "Player 1 Death\n";
-                    AllProjectiles[b] = Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110));
-                }
-                if (tank2->checkDeath(AllProjectiles[b].pos)) {
-                    cout << "Player 2 Death\n";
+                        cout << "Player 1 Death\n";
+                        *isTitleScreen = true;
+                        titleScreen->setTexture(redWin);
+                        AllProjectiles[b] = Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10,
+                                                       sf::Color(110, 110, 110));
+                    }
+                    if (tank2->checkDeath(AllProjectiles[b].pos)) {
+                        cout << "Player 2 Death\n";
+                        *isTitleScreen = true;
+                        titleScreen->setTexture(blueWin);
+
+
 //                    tank2->tank.setFillColor(sf::Color(200, 0, 0));
-                    AllProjectiles[b] = Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10, sf::Color(110, 110, 110));
+                        AllProjectiles[b] = Projectile(0, Vector2(0, 0), Vector2(-100, -100), 10,
+                                                       sf::Color(110, 110, 110));
+                    }
                 }
             }
-        }
-        for (int b = 0; b < bodies; b++){
-            (AllProjectiles[b]).UpdatePosition();
-        }
+            for (int b = 0; b < bodies; b++) {
+                (AllProjectiles[b]).UpdatePosition();
+            }
 //        cout << tank1->tank.getPosition().x << " " << tank1->tank.getPosition().y << "\n";
 //        cout << tank2->tank.getPosition().x << " " << tank2->tank.getPosition().y << "\n";
+        }
     }
 }
 
@@ -569,12 +583,26 @@ int main() {
     }else{
         cout << "Loaded greyTankBase.png\n";
     }
-    sf::Texture *titleScreenImage;
-    if(!titleScreenImage->loadFromFile("./Assets/TitleScreen.png")){
-        cout << "Errpr loading titleScreen.png\n";
+    sf::Texture titleScreenImage;
+    if(!titleScreenImage.loadFromFile("./Assets/TitleScreen.png")){
+        cout << "Error loading titleScreen.png\n";
         return 0;
     }else{
         cout << "Loaded titleScreen.png\n";
+    }
+    sf::Texture redScreenImage;
+    if(!redScreenImage.loadFromFile("./Assets/BlueScreen.png")){
+        cout << "Error loading RedScreen.png\n";
+        return 0;
+    }else{
+        cout << "Loaded RedScreen.png\n";
+    }
+    sf::Texture blueScreenImage;
+    if(!blueScreenImage.loadFromFile("./Assets/RedScreen.png")){
+        cout << "Error loading BlueScreen.png\n";
+        return 0;
+    }else{
+        cout << "Loaded BlueScreen.png\n";
     }
 
 
@@ -591,10 +619,11 @@ int main() {
     tank2.turret.setColor(sf::Color(100, 100, 255));
 
 
-    // Title screen
-    sf::RectangleShape titleScreen = sf::RectangleShape();
 
-    titleScreen.setTexture(titleScreenImage);
+    // Title screen
+    sf::Sprite titleScreen = sf::Sprite(titleScreenImage);
+//
+//    titleScreen.setTexture(titleScreenImage);
 
 
     // Create Window
@@ -664,7 +693,7 @@ int main() {
     sf::Event event{};
 
     // Start physics thread
-    std::thread thread(FixedUpdate, allProjectiles, projectiles, allPlanesX, planesX, allPlanesY, planesY, allBarriers, barriers, &tank1, &tank2, &keys);
+    std::thread thread(FixedUpdate, allProjectiles, projectiles, allPlanesX, planesX, allPlanesY, planesY, allBarriers, barriers, &tank1, &tank2, &keys, &inTitleScreen, &titleScreen, blueScreenImage, redScreenImage);
 
     // Graphics thread
     while (window.isOpen()){
@@ -740,12 +769,10 @@ int main() {
 
 
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::X) || sf::Keyboard::isKeyPressed(sf::Keyboard::M)){
-                inTitleScreen = true;
-                tank1.setPosition(Vector2(0, 0));
-                tank2.setPosition(Vector2(0, 0));
+                inTitleScreen = false;
+                tank1.setPosition(Vector2(100, 384));
+                tank2.setPosition(Vector2(1266, 384));
             }
-
-
         }
 
         // Render GameObjects
